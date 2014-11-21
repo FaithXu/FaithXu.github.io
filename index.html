@@ -1,12 +1,23 @@
 <!DOCTYPE html>
-<html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+    <html lang="en-us"></html>
     <head>
-        <meta charset="utf-8" />
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title>Making a Beautiful HTML5 Portfolio | Tutorialzine Demo</title>
+        <!-- Place favicon.ico and apple-touch-icon.png in the root directory -->
 
         <!-- Our CSS stylesheet file -->
-        <link rel="stylesheet" href="assets/css/styles.css" />
+        <link rel="stylesheet" href="css/normalize.css">
+        <link rel="stylesheet" href="css/main.css">
+        <link rel="stylesheet" href="css/styles.css" />
+        <script src="js/vendor/modernizr-2.6.2.min.js"></script>
+        <title>Making a Beautiful HTML5 Portfolio | Tutorialzine Demo</title>
 
         <!-- Enabling HTML5 tags for older IE browsers -->
         <!--[if lt IE 9]>
@@ -27,7 +38,12 @@
         <h1>Hello World.This is Faith Xu.</h1>
 		<p>I'm hosted with GitHub Pages.</p>
 
-        <section id="container">
+
+        <section class="introduction">
+            <h1>WWF</h1>
+            <p>The World Wide Fund for Nature (WWF) is....</p>
+        </section>
+        <section id="container" class="content">
         	<ul id="stage">
                 <!-- Your portfolio items go here -->
                 <li data-tags="Print Design">
@@ -43,15 +59,60 @@
 				</li>
             </ul>
         </section>
+        <section class="contact information"></section>
+
+        <article>
+          <header>
+            <h1>What Does WWF Do?</h1>
+            <p>WWF's mission:</p>
+          </header>
+          <p>WWF's mission is to stop the degradation of our planet's natural environment,
+          and build a future in which humans live in harmony with nature.</p>
+        </article>
+
+        <p>My family and I visited The Epcot center this summer.</p>
+
+        <aside>
+          <h4>Epcot Center</h4>
+          <p>The Epcot Center is a theme park in Disney World, Florida.</p>
+        </aside>
+
+        <figure>
+          <img src="pic_mountain.jpg" alt="The Pulpit Rock" width="304" height="228">
+          <figcaption>Fig1. - The Pulpit Pock, Norway.</figcaption>
+        </figure>
 
         <footer>
+          <p>Posted by: Hege Refsnes</p>
+          <p> the author of the document, copyright information, links to terms of use,Contact information: <a href="mailto:someone@example.com">
+          someone@example.com</a>.</p>
         </footer>
+         <!--[if lt IE 7]>
+            <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
+        <![endif]-->
 
+        <!-- Add your site or application content here -->
+        <p>Hello world! This is HTML5 Boilerplate.</p>
+
+        
+
+        <!-- Google Analytics: change UA-XXXXX-X to be your site's ID. -->
+        <script>
+            (function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=
+            function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;
+            e=o.createElement(i);r=o.getElementsByTagName(i)[0];
+            e.src='//www.google-analytics.com/analytics.js';
+            r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));
+            ga('create','UA-XXXXX-X');ga('send','pageview');
+        </script>
         <!-- Including jQuery, the Quicksand plugin, and our own script.js -->
 
-        <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js"></script>
-        <script src="assets/js/jquery.quicksand.js"></script>
-        <script src="assets/js/script.js"></script>
+       <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+        <script>window.jQuery || document.write('<script src="js/vendor/jquery-1.10.2.min.js"><\/script>')</script>
+        <script src="js/plugins.js"></script>
+        <script src="js/main.js"></script>
+        <script src="js/jquery.quicksand.js"></script>
+        <script src="js/script.js"></script>
 
     </body>
 </html>
