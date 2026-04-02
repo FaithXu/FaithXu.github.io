@@ -1,6 +1,6 @@
 ---
 title: "Zenlayer 二层网络文档重写示例"
-permalink: /zenlayer-layer2-rewrite/
+permalink: /blog/zenlayer-layer2-rewrite/
 layout: post
 author_profile: false
 ---
