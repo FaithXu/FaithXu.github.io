@@ -1,11 +1,12 @@
 ---
 title: "Zenlayer 二层网络文档重写示例"
 permalink: /zenlayer-layer2-rewrite/
-layout: single
+layout: post
 author_profile: false
 ---
 
 这是一份针对 Zenlayer 官方“创建二层网络”文档的重写示例。原文档技术准确、信息完整，但在用户体验方面存在优化空间。本次重写以用户任务为中心，降低认知门槛，帮助用户快速完成首次配置。
+
 官方文档链接：[创建二层网络 | 中文 | Zenlayer Docs](https://docs.console.zenlayer.com/welcome/cn/cloud-networking/get-started/create-a-layer-2-connection)
 ---
 
