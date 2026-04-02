@@ -13,7 +13,7 @@
 # you will see them accessed via {{ site.title }}, {{ site.email }}, and so on.
 # You can create any custom variable you would like, and they will be accessible
 # in the templates via {{ site.myvariable }}.
-title: 徐奇 | 让技术被理解
+title: 让技术被理解
 email:
 description: >- # this means to ignore newlines until "baseurl:"
   徐奇的技术文档作品集
@@ -60,10 +60,11 @@ author:
   name   : "徐奇"
   avatar : "/assets/images/bio-photo.jpg"
   bio    : "写文档的人。相信好的文档能在用户和产品之间搭一座桥。"
-  location : "上海"
 
 footer:
 
+atom_feed:
+  hide: true
 
 defaults:
   # _posts
