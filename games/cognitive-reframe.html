@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>认知重构</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    overflow: hidden;
+    min-height: 100vh;
+    background: #1e2535;
+    transition: background 1.5s ease;
+  }
+
+  /* 开场封面 */
+  #start-screen {
+    position: fixed;
+    inset: 0;
+    background: #1e2535;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 300;
+    transition: opacity 0.5s ease;
+  }
+
+  #start-screen .inner {
+    text-align: center;
+    padding: 2rem;
+  }
+
+  #start-screen .icon { font-size: 3.5rem; margin-bottom: 1rem; }
+  #start-screen h1 {
+    font-size: 1.6rem;
+    font-weight: 400;
+    color: rgba(255,255,255,0.88);
+    letter-spacing: 0.1em;
+    margin-bottom: 0.4rem;
+  }
+  #start-screen .sub {
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.32);
+    letter-spacing: 0.15em;
+    margin-bottom: 2.5rem;
+  }
+  #start-screen .guide {
+    color: rgba(255,255,255,0.48);
+    font-size: 0.88rem;
+    line-height: 2.1;
+    max-width: 280px;
+    margin: 0 auto 2.5rem;
+  }
+  #start-screen .hint {
+    margin-top: 2rem;
+    font-size: 0.72rem;
+    color: rgba(255,255,255,0.25);
+    line-height: 2;
+  }
+  #start-btn {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 30px;
+    color: rgba(255,255,255,0.8);
+    padding: 0.75rem 2.5rem;
+    font-size: 0.95rem;
+    cursor: pointer;
+    font-family: inherit;
+    letter-spacing: 0.08em;
+    transition: all 0.25s;
+  }
+  #start-btn:hover { background: rgba(255,255,255,0.16); }
+
+  /* 顶部信息栏 */
+  #hud {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.9rem 1.5rem;
+    background: rgba(0,0,0,0.15);
+    backdrop-filter: blur(6px);
+    z-index: 100;
+    pointer-events: none;
+  }
+
+  #hud-left, #hud-right { display: flex; align-items: center; gap: 1.2rem; }
+  .hud-label { font-size: 0.78rem; color: rgba(255,255,255,0.45); letter-spacing: 0.05em; }
+  .hud-value { font-size: 0.95rem; color: rgba(255,255,255,0.85); font-weight: 500; }
+
+  #warmth-bar {
+    width: 80px; height: 5px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 3px; overflow: hidden;
+  }
+  #warmth-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #7eb8c9, #f4c890, #ff8a65);
+    width: 0%; border-radius: 3px;
+    transition: width 1.5s ease;
+  }
+
+  /* 游戏区域 */
+  #game {
+    position: fixed;
+    inset: 0;
+    padding-top: 60px;
+  }
+
+  /* 想法卡片 */
+  .thought-card {
+    position: absolute;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 14px;
+    padding: 0.8rem 1rem;
+    color: rgba(255,255,255,0.88);
+    font-size: 0.88rem;
+    line-height: 1.65;
+    max-width: 210px;
+    cursor: grab;
+    user-select: none;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    transition: transform 0.1s, box-shadow 0.2s, border-color 0.2s, background 0.2s;
+    touch-action: none;
+  }
+
+  .thought-card:hover {
+    border-color: rgba(255,255,255,0.22);
+    box-shadow: 0 8px 28px rgba(0,0,0,0.45);
+  }
+
+  .thought-card.dragging {
+    cursor: grabbing;
+    transform: scale(1.07) rotate(1.5deg);
+    box-shadow: 0 16px 45px rgba(0,0,0,0.55);
+    background: rgba(255,255,255,0.13);
+    z-index: 50;
+  }
+
+  /* 重构盒子 */
+  #boxes-area {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    display: flex;
+    z-index: 10;
+  }
+
+  .ref-box {
+    flex: 1;
+    padding: 1.1rem 0.6rem 1rem;
+    border-top: 2px solid rgba(255,255,255,0.07);
+    text-align: center;
+    transition: background 0.35s, border-color 0.35s;
+  }
+
+  .ref-box.highlight {
+    background: rgba(255,255,255,0.07);
+    border-color: rgba(255,255,255,0.22);
+  }
+
+  .ref-box.success {
+    animation: box-flash 0.55s ease;
+  }
+
+  @keyframes box-flash {
+    0% { background: rgba(255,255,255,0.03); }
+    40% { background: rgba(244,200,144,0.16); }
+    100% { background: rgba(255,255,255,0.03); }
+  }
+
+  .box-icon { font-size: 1.5rem; margin-bottom: 0.35rem; display: block; }
+  .box-name { font-size: 0.8rem; color: rgba(255,255,255,0.68); font-weight: 500; margin-bottom: 0.2rem; }
+  .box-hint { font-size: 0.7rem; color: rgba(255,255,255,0.32); line-height: 1.4; }
+
+  /* 结果展示 */
+  #result-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(5px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s;
+  }
+
+  #result-overlay.show { opacity: 1; pointer-events: all; }
+
+  .result-card {
+    background: rgba(22,28,45,0.98);
+    border: 1px solid rgba(255,255,255,0.13);
+    border-radius: 20px;
+    padding: 1.8rem 2rem;
+    max-width: 380px;
+    width: 90%;
+    text-align: center;
+    transform: scale(0.9) translateY(10px);
+    transition: transform 0.35s;
+  }
+
+  #result-overlay.show .result-card { transform: scale(1) translateY(0); }
+
+  .result-label {
+    font-size: 0.7rem;
+    color: rgba(255,255,255,0.3);
+    letter-spacing: 0.1em;
+    margin-bottom: 0.35rem;
+  }
+
+  .result-before {
+    font-size: 0.86rem;
+    color: rgba(255,255,255,0.5);
+    line-height: 1.65;
+    margin-bottom: 1.2rem;
+    padding: 0.6rem 0.9rem;
+    background: rgba(255,100,100,0.06);
+    border-radius: 8px;
+    border-left: 2px solid rgba(255,110,110,0.3);
+    text-align: left;
+  }
+
+  .result-after {
+    font-size: 0.97rem;
+    color: #f4c890;
+    line-height: 1.85;
+    margin-bottom: 1rem;
+    text-align: left;
+  }
+
+  .result-tag {
+    display: inline-block;
+    font-size: 0.7rem;
+    color: rgba(255,255,255,0.38);
+    background: rgba(255,255,255,0.05);
+    border-radius: 20px;
+    padding: 0.2rem 0.7rem;
+    margin-bottom: 1.2rem;
+  }
+
+  .result-btn {
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 30px;
+    color: rgba(255,255,255,0.65);
+    padding: 0.55rem 1.8rem;
+    font-size: 0.88rem;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s;
+  }
+
+  .result-btn:hover { background: rgba(255,255,255,0.13); color: #fff; }
+
+  /* 结束画面 */
+  #end-screen {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.65);
+    backdrop-filter: blur(8px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.7s;
+  }
+
+  #end-screen.show { opacity: 1; pointer-events: all; }
+  #end-screen .end-icon { font-size: 3rem; margin-bottom: 0.9rem; }
+  #end-screen h2 { color: rgba(255,255,255,0.85); font-weight: 400; font-size: 1.4rem; margin-bottom: 0.4rem; }
+  #end-screen .end-sub { color: rgba(255,255,255,0.38); font-size: 0.85rem; margin-bottom: 0.3rem; }
+  #end-screen .end-score { font-size: 1rem; color: #f4c890; margin-bottom: 2rem; }
+  #end-screen button {
+    background: rgba(255,255,255,0.09);
+    border: 1px solid rgba(255,255,255,0.16);
+    border-radius: 30px;
+    color: rgba(255,255,255,0.75);
+    padding: 0.65rem 2.2rem;
+    font-size: 0.9rem;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s;
+  }
+  #end-screen button:hover { background: rgba(255,255,255,0.17); }
+
+  /* 温暖粒子 */
+  #warm-particles {
+    position: fixed; inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+  }
+
+  .warm-puff {
+    position: absolute;
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: #f4c890;
+    opacity: 0;
+    animation: puff-up 2.8s ease-out forwards;
+  }
+
+  @keyframes puff-up {
+    0% { transform: scale(0); opacity: 0.7; }
+    60% { opacity: 0.25; }
+    100% { transform: scale(5) translateY(-100px); opacity: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div id="warm-particles"></div>
+
+<!-- 开场封面 -->
+<div id="start-screen">
+  <div class="inner">
+    <div class="icon">💛</div>
+    <h1>认知重构</h1>
+    <div class="sub">COGNITIVE REFRAME</div>
+    <div class="guide">
+      负面思维飘下来<br>
+      把它拖进正确的盒子<br>
+      重构成更真实的样子
+    </div>
+    <button id="start-btn">开始</button>
+    <div class="hint">
+      🔍 事实还是想法？<br>
+      🪄 最小动作<br>
+      💛 自我共情<br>
+      ✨ 可能性
+    </div>
+  </div>
+</div>
+
+<div id="hud">
+  <div id="hud-left">
+    <div>
+      <div class="hud-label">已完成</div>
+      <div class="hud-value" id="progress-text">0 / 8</div>
+    </div>
+  </div>
+  <div id="hud-right">
+    <div>
+      <div class="hud-label">温暖值</div>
+      <div id="warmth-bar"><div id="warmth-fill"></div></div>
+    </div>
+  </div>
+</div>
+
+<div id="game"></div>
+
+<!-- 重构盒子 -->
+<div id="boxes-area">
+  <div class="ref-box" data-box="fact">
+    <span class="box-icon">🔍</span>
+    <div class="box-name">事实还是想法？</div>
+    <div class="box-hint">区分情绪与事实</div>
+  </div>
+  <div class="ref-box" data-box="small">
+    <span class="box-icon">🪄</span>
+    <div class="box-name">最小动作</div>
+    <div class="box-hint">5分钟能做什么</div>
+  </div>
+  <div class="ref-box" data-box="compassion">
+    <span class="box-icon">💛</span>
+    <div class="box-name">自我共情</div>
+    <div class="box-hint">像对待朋友一样</div>
+  </div>
+  <div class="ref-box" data-box="possibility">
+    <span class="box-icon">✨</span>
+    <div class="box-name">可能性</div>
+    <div class="box-hint">还有别的解释吗</div>
+  </div>
+</div>
+
+<!-- 结果展示 -->
+<div id="result-overlay">
+  <div class="result-card">
+    <div class="result-label">原来你在想</div>
+    <div class="result-before" id="result-before"></div>
+    <div class="result-label" style="margin-top:0.8rem;">重构后</div>
+    <div class="result-after" id="result-after"></div>
+    <div class="result-tag" id="result-tag"></div>
+    <button class="result-btn" id="result-btn">继续</button>
+  </div>
+</div>
+
+<!-- 结束画面 -->
+<div id="end-screen">
+  <div class="end-icon">💛</div>
+  <h2>今日重构完成</h2>
+  <div class="end-sub" id="end-sub">你处理了 8 个负面思维</div>
+  <div class="end-score" id="end-score"></div>
+  <button onclick="restartGame()">再来一轮</button>
+</div>
+
+<script>
+// ── 想法库 ─────────────────────────────────────────────
+const thoughtBank = [
+  { q: "我又拖延了，什么都做不好。", reframe: {
+    fact: "我没有做那件特定的事，但这不等于我什么都做不好。事实上今天我完成了其他事情。",
+    small: "那我能做的最小的第一步是什么？哪怕只有5分钟？开始了就会好一些。",
+    compassion: "拖延是人类的本能，不是我一个人的问题。我可以温柔地开始，不需要完美。",
+    possibility: "也许我不是在拖延，我只是在等一个合适的时机。时机到了，自然会动。" }},
+  { q: "我总是把事情拖到最后一刻。", reframe: {
+    fact: "\"总是\"是夸张词。实际上我有一些事情是提前完成的，并非每件事都拖到最后。",
+    small: "现在就开始5分钟，定个闹钟。时间到了可以停，但往往会发现已经进入状态了。",
+    compassion: "我在截止日期前完成了，说明我有在努力。这本身就很值得肯定。",
+    possibility: "有时候最后期限的紧迫感反而让我更专注、更有效率。这也是一种能力。" }},
+  { q: "明天一定开始，今天太累了。", reframe: {
+    fact: "\"明天\"不会比今天多出任何时间。休息是真实的需要，不是在找借口。",
+    small: "今天能不能只做那件事的十分之一？哪怕只走一小步，也是开始。",
+    compassion: "我今天已经做了很多。休息也是行动的一部分，甚至可能是最重要的部分。",
+    possibility: "休息好了，身体和大脑会帮我找到更好的方式。也许明天真的会更有灵感。" }},
+  { q: "每次想到要做的事好多，就放弃了。", reframe: {
+    fact: "我在用\"全部\"代替了\"具体\"。一件一件来，其实是可以的。",
+    small: "今天只做一件。不是所有，就是一件。这是可以做到的。",
+    compassion: "压力已经很大了。不需要再给自己加内疚。那是额外的负担。",
+    possibility: "想到很多说明我在乎。只是不需要一次处理所有，可以一件一件来。" }},
+  { q: "我什么都做不好。", reframe: {
+    fact: "这是情绪，不是事实。我有过很多做好的事情，记得吗？",
+    small: "有一件事我今天做得还可以吗？哪怕只是一件小小的事？",
+    compassion: "如果朋友这么说自己，我会心疼。对自己也要公平一点。",
+    possibility: "也许只是还没找到擅长的事，但那不代表没有。" }},
+  { q: "我不配得到好的东西。", reframe: {
+    fact: "我不喜欢\"不配\"这个词。我活着，不需要别人的许可。好的东西是给活着的人的。",
+    small: "一件小事，今天有什么是我值得拥有的？哪怕一杯喜欢的饮料也算。",
+    compassion: "我在努力，我值得被善待，就像任何人一样。这不需要理由。",
+    possibility: "好的东西不是奖励，是我可以主动选择的。这是一种能力。" }},
+  { q: "我太差了，比不上别人。", reframe: {
+    fact: "我在拿自己的短板和别人的长板比。这不公平，比较本身就有问题。",
+    small: "跟昨天的自己比，我进步了一点点吗？那才是真正有意义的比较。",
+    compassion: "每个人的起点和路径都不同。比较不会让我更好，只会更焦虑。",
+    possibility: "我看不到别人的全部。每个人展示的只是生活的一小面。" }},
+  { q: "这点小事都做不好，我真没用。", reframe: {
+    fact: "一件小事做不好，不等于整个人没用。这是跳跃性的逻辑，不成立。",
+    small: "那件事是什么？具体卡在哪里？找到卡点，就找到了突破口。",
+    compassion: "没有人每件事都做得好。允许自己做不好，是成熟的一部分。",
+    possibility: "失败里藏着有用的信息，不只是坏消息。它在告诉我什么需要调整。" }},
+  { q: "我就是个loser。", reframe: {
+    fact: "一个词不能定义一个人，尤其是一个还在努力、还在尝试的人。",
+    small: "今天有没有哪一刻，我没有放弃？那就是证明。",
+    compassion: "如果朋友这么叫自己，我会不同意。对自己也要公正一点。",
+    possibility: "\"loser\"是固定标签，而人是会变的。现在的我已经在路上了。" }},
+  { q: "他是不是不在乎我了？", reframe: {
+    fact: "我无法确定他在想什么。我看到的行为才是事实。行为比推测可靠。",
+    small: "我可以问一句：\"你今天还好吗？\"沟通比猜测更有效。",
+    compassion: "担心是爱的一部分，不代表我不安全。这是关心，不是软弱。",
+    possibility: "也许他只是累了、忙了，不一定和我有关。很多时候事情很简单。" }},
+  { q: "别人一定觉得我很奇怪。", reframe: {
+    fact: "这只是我的推测，我没有证据证明别人真的这么想。",
+    small: "我真的了解每个人怎么想吗？不可能。这在逻辑上不成立。",
+    compassion: "就算有人觉得我奇怪，那也只是他们的看法，不是客观事实。",
+    possibility: "真正和我合拍的人，会欣赏我的奇怪。那才是值得在意的人。" }},
+  { q: "我总是说错话。", reframe: {
+    fact: "\"总是\"这个词本身就不准确。我也有很多说对话的时刻。",
+    small: "这次说错了。下次我会更有意识。这是学习，不是失败。",
+    compassion: "没有人每次说话都得体。我允许自己有不完美的表达。",
+    possibility: "有时候说错话，反而让关系更真实。真实比完美更有价值。" }},
+  { q: "我是不是太黏人了？", reframe: {
+    fact: "我感受到的需要是真实的。不需要为此感到羞耻，羞耻只会让需要变得更复杂。",
+    small: "我可以先给自己一点时间和空间，看看感觉如何，再决定怎么做。",
+    compassion: "有需要不是软弱，是人类的一部分。我可以坦诚地表达。",
+    possibility: "也许我只是需要一个确认，确认我是被在乎的。这很正常。" }},
+  { q: "他们是不是在背后议论我？", reframe: {
+    fact: "我没有证据证明这件事正在发生。这只是我的推测，没有证实。",
+    small: "就算真的有人在议论，我真的能改变吗？如果不能，就不值得焦虑。",
+    compassion: "不管别人怎么看，我对自己的感受是真实的，也是重要的。",
+    possibility: "也许他们在聊别的事情，或者根本没在聊。我只是不知道而已。" }},
+  { q: "做得不够好，就等于失败。", reframe: {
+    fact: "失败是结果不好。不够好只是\"还有进步空间\"，不是失败。",
+    small: "这次做到80%可以吗？80%已经很有价值了，100%不是必须的。",
+    compassion: "完美是人类的幻想，不完美才是真实的。真实的东西更有温度。",
+    possibility: "每次\"不够好\"里都藏着下一次进步的空间。这是机会，不是失败。" }},
+  { q: "必须做到完美，否则毫无意义。", reframe: {
+    fact: "\"必须\"这个词造成了不必要的压力。足够好就够了，不需要完美。",
+    small: "完美版本的第一步是什么？先完成它。完成比完美重要。",
+    compassion: "我已经足够努力了。这本身就值得肯定，不需要完美来凑。",
+    possibility: "有时候80分的作品比100分的完美更有温度，更有人的痕迹。" }},
+  { q: "要是做不好还不如不做。", reframe: {
+    fact: "不做才是最大的失败——因为放弃了可能性，也放弃了成长。",
+    small: "不做完美，只做一点点。可以是草稿，可以是粗糙的版本。开始就是胜利。",
+    compassion: "我值得一个\"不够完美\"的自己。这也是一种真实的样子。",
+    possibility: "有时候做了不好，才知道下次怎么更好。试错是探索的一部分。" }},
+  { q: "已经努力了，还是不够好。", reframe: {
+    fact: "足够好是主观标准。我需要先定义\"什么是足够好\"，而不是无限提高标准。",
+    small: "今天的我已经比昨天更好了。哪怕只有1%，那也是进步。",
+    compassion: "努力本身就是一种成就，不管结果如何。我已经值得为自己骄傲了。",
+    possibility: "也许不是我不努力，是方向需要调整。调整方向不是失败。" }},
+  { q: "未来一片迷茫，不知道该怎么办。", reframe: {
+    fact: "迷茫是现在的状态，不是未来的状态。未来还没有来，还有无限可能。",
+    small: "眼前有一件事吗？就是现在能做的哪怕最小的一件？跟着感觉走。",
+    compassion: "迷茫说明我在乎自己的方向。在乎就会找到路，只是需要时间。",
+    possibility: "有时候不知道路在哪，是因为还没走到那里。继续走，路会出现。" }},
+  { q: "我害怕自己一事无成。", reframe: {
+    fact: "我没有证据证明我会一事无成。这只是一种可能性，不是定论。",
+    small: "今天有没有做成一件小事？一件也算。成就是一点一点累积的。",
+    compassion: "焦虑说明我在乎自己的成长。这是好的，不是问题。",
+    possibility: "成就不是只有大的才叫成就。小事情也有重量，有意义。" }},
+  { q: "我肯定会在大家面前出丑的。", reframe: {
+    fact: "这是对未来的预测，不是事实。以前出丑过，但不是每次都会。",
+    small: "就算出丑了，会怎样？真的有那么可怕吗？真的会发生吗？",
+    compassion: "每个人都会出丑，这不是我的特权。大家都是普通人。",
+    possibility: "有时候出丑反而让大家更喜欢我，因为真实、有趣。" }},
+  { q: "他们一定都觉得我很无聊。", reframe: {
+    fact: "我无法知道每个人的想法。这只是我的假设，没有证据。",
+    small: "我可以问问身边信任的人：我无聊吗？事实比猜测可靠。",
+    compassion: "我不需要让所有人觉得有趣。那是表演，不是真实的关系。",
+    possibility: "就算有人觉得我无聊，也不代表所有人。总会有人欣赏我的方式。" }},
+  { q: "我不应该有这样的情绪。", reframe: {
+    fact: "情绪是自动产生的，没有\"应该\"或\"不应该\"。情绪只是情绪。",
+    small: "我能给这个情绪起个名字吗？它是什么？命名可以减轻它的力量。",
+    compassion: "情绪来了就是来了。不需要评判自己，那会让事情更糟。",
+    possibility: "情绪背后往往有原因。了解它比压制它有用得多。" }},
+  { q: "我好内疚，我做错了。", reframe: {
+    fact: "内疚说明我有道德感，这是好事。但需要区分错误和失误。",
+    small: "我能做点什么来弥补吗？哪怕一点点？行动比内疚更有用。",
+    compassion: "失误不等于坏人。我值得被自己原谅，也值得被原谅。",
+    possibility: "有时候犯错反而让我们更了解自己真正在乎什么。这是收获。" }},
+  { q: "我不应该这么敏感。", reframe: {
+    fact: "敏感不是缺陷，是特质。每个人感知世界的方式不同，没有对错。",
+    small: "敏感带给我什么信息？它想告诉我什么？也许是在提醒我什么。",
+    compassion: "敏感让我更能感知别人，这是天赋，不是弱点。",
+    possibility: "不是我不该敏感，是有些环境对敏感的人不够友好。那不是我的问题。" }},
+  { q: "我到底想要什么？", reframe: {
+    fact: "这个问题没有快速答案。这是正常的，不是失败。很多人终其一生都在探索。",
+    small: "今天有一件事我稍微想做吗？哪怕一点点？跟着那个感觉。",
+    compassion: "不知道想要什么是可以的。慢慢来，不着急。",
+    possibility: "想要什么不是固定不变的。它会随着时间和经历改变，这也是正常的。" }},
+  { q: "我觉得自己不够好，不值得被爱。", reframe: {
+    fact: "值得被爱不需要任何条件。我的存在本身就有价值，这是事实。",
+    small: "有没有一个人，曾经觉得我很珍贵？哪怕只是一瞬间？那就是证明。",
+    compassion: "如果我不爱自己，谁来替我爱我？这是我给自己的承诺。",
+    possibility: "爱不是挣来的。是允许自己接收的。我可以打开接收的开关。" }},
+];
+
+// ── 游戏状态 ────────────────────────────────────────────
+let deck = [];
+let currentIndex = 0;
+let warmth = 0;
+let gameRunning = false;
+let cardEl = null;
+let dragState = { dragging: false, offsetX: 0, offsetY: 0 };
+
+const gameEl = document.getElementById('game');
+const resultOverlay = document.getElementById('result-overlay');
+const endScreen = document.getElementById('end-screen');
+const startScreen = document.getElementById('start-screen');
+const warmthFill = document.getElementById('warmth-fill');
+const progressText = document.getElementById('progress-text');
+const puffContainer = document.getElementById('warm-particles');
+
+const boxNames = {
+  fact: '🔍 事实还是想法？',
+  small: '🪄 最小动作',
+  compassion: '💛 自我共情',
+  possibility: '✨ 可能性'
+};
+
+// ── 开始 ──────────────────────────────────────────────
+document.getElementById('start-btn').addEventListener('click', () => {
+  startGame();
+});
+
+document.getElementById('result-btn').addEventListener('click', closeResult);
+
+function startGame() {
+  // 随机抽 8 张
+  const shuffled = [...thoughtBank].sort(() => Math.random() - 0.5);
+  deck = shuffled.slice(0, 8);
+
+  currentIndex = 0;
+  warmth = 0;
+  gameRunning = true;
+
+  // 淡出封面
+  startScreen.style.opacity = '0';
+  setTimeout(() => { startScreen.style.display = 'none'; }, 500);
+
+  endScreen.classList.remove('show');
+  resultOverlay.classList.remove('show');
+  warmthFill.style.width = '0%';
+  document.body.style.background = '#1e2535';
+  progressText.textContent = `0 / ${deck.length}`;
+  puffContainer.innerHTML = '';
+  gameEl.innerHTML = '';
+
+  setTimeout(spawnCard, 300);
+}
+
+// ── 卡片生成 ────────────────────────────────────────────
+function spawnCard() {
+  if (currentIndex >= deck.length) { endGame(); return; }
+
+  const item = deck[currentIndex];
+  const x = 30 + Math.random() * (window.innerWidth - 290);
+  const y = 70 + Math.random() * 80;
+
+  cardEl = document.createElement('div');
+  cardEl.className = 'thought-card';
+  cardEl.textContent = item.q;
+  cardEl.style.left = x + 'px';
+  cardEl.style.top = y + 'px';
+
+  cardEl.addEventListener('mousedown', onMouseDown);
+  cardEl.addEventListener('touchstart', onTouchStart, { passive: false });
+
+  gameEl.appendChild(cardEl);
+}
+
+// ── 拖拽 ──────────────────────────────────────────────
+function getXY(e) {
+  if (e.touches) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  return { x: e.clientX, y: e.clientY };
+}
+
+function onMouseDown(e) { startDrag(e); document.addEventListener('mousemove', onMouseMove); document.addEventListener('mouseup', onMouseUp); }
+function onTouchStart(e) { e.preventDefault(); startDrag(e); document.addEventListener('touchmove', onTouchMove, { passive: false }); document.addEventListener('touchend', onTouchEnd); }
+
+function startDrag(e) {
+  if (!gameRunning) return;
+  const pos = getXY(e);
+  const rect = cardEl.getBoundingClientRect();
+  dragState = { dragging: true, offsetX: pos.x - rect.left, offsetY: pos.y - rect.top };
+  cardEl.classList.add('dragging');
+}
+
+function onMouseMove(e) { moveDrag(e); }
+function onTouchMove(e) { e.preventDefault(); moveDrag(e); }
+
+function moveDrag(e) {
+  if (!dragState.dragging) return;
+  const pos = getXY(e);
+  cardEl.style.left = (pos.x - dragState.offsetX) + 'px';
+  cardEl.style.top = (pos.y - dragState.offsetY) + 'px';
+  updateHighlight(pos.x, pos.y);
+}
+
+function onMouseUp(e) { endDrag(e); document.removeEventListener('mousemove', onMouseMove); document.removeEventListener('mouseup', onMouseUp); }
+function onTouchEnd(e) { endDrag(e); document.removeEventListener('touchmove', onTouchMove); document.removeEventListener('touchend', onTouchEnd); }
+
+function updateHighlight(x, y) {
+  document.querySelectorAll('.ref-box').forEach(b => b.classList.remove('highlight'));
+  if (y > window.innerHeight - 130) {
+    const boxW = window.innerWidth / 4;
+    const idx = Math.min(3, Math.floor(x / boxW));
+    const box = document.querySelectorAll('.ref-box')[idx];
+    if (box) box.classList.add('highlight');
+  }
+}
+
+function endDrag(e) {
+  if (!dragState.dragging) return;
+  dragState.dragging = false;
+  cardEl.classList.remove('dragging');
+
+  const pos = getXY(e.changedTouches ? e.changedTouches[0] : e);
+  const { x, y } = pos;
+
+  document.querySelectorAll('.ref-box').forEach(b => b.classList.remove('highlight'));
+
+  const boxY = window.innerHeight - 130;
+  if (y > boxY) {
+    const boxW = window.innerWidth / 4;
+    const boxIdx = Math.min(3, Math.floor(x / boxW));
+    const key = document.querySelectorAll('.ref-box')[boxIdx]?.dataset.box;
+    if (key) { dropIntoBox(key); return; }
+  }
+
+  // 没放进盒子，回到原位
+  if (cardEl) {
+    cardEl.style.transition = 'all 0.3s ease';
+    cardEl.style.top = (80 + Math.random() * 60) + 'px';
+    setTimeout(() => { if (cardEl) cardEl.style.transition = ''; }, 300);
+  }
+}
+
+// ── 放进盒子 ────────────────────────────────────────────
+function dropIntoBox(key) {
+  const item = deck[currentIndex];
+  const after = item.reframe[key];
+
+  cardEl.remove();
+  cardEl = null;
+
+  showResult(item.q, after, key);
+
+  currentIndex++;
+  warmth += Math.floor(100 / deck.length);
+  warmthFill.style.width = warmth + '%';
+  progressText.textContent = `${currentIndex} / ${deck.length}`;
+
+  // 背景变暖
+  const p = warmth / 100;
+  const r = Math.round(30 + p * 50);
+  const g = Math.round(37 + p * 60);
+  const b = Math.round(53 - p * 30);
+  document.body.style.background = `rgb(${r},${g},${b})`;
+
+  // 粒子
+  for (let i = 0; i < 5; i++) {
+    const pu = document.createElement('div');
+    pu.className = 'warm-puff';
+    pu.style.left = (window.innerWidth / 2 - 15 + Math.random() * 30) + 'px';
+    pu.style.top = (window.innerHeight - 80) + 'px';
+    pu.style.animationDelay = (i * 0.1) + 's';
+    puffContainer.appendChild(pu);
+    setTimeout(() => pu.remove(), 3000);
+  }
+
+  // 盒子动画
+  document.querySelectorAll('.ref-box').forEach(b => {
+    b.classList.add('success');
+    setTimeout(() => b.classList.remove('success'), 600);
+  });
+}
+
+function showResult(before, after, key) {
+  document.getElementById('result-before').textContent = before;
+  document.getElementById('result-after').textContent = after;
+  document.getElementById('result-tag').textContent = boxNames[key] || '';
+  resultOverlay.classList.add('show');
+}
+
+function closeResult() {
+  resultOverlay.classList.remove('show');
+  if (gameRunning) setTimeout(spawnCard, 400);
+}
+
+function endGame() {
+  gameRunning = false;
+  const ws = Math.round(warmth);
+  document.getElementById('end-score').textContent = `温暖值 ${ws} / 100`;
+  document.getElementById('end-sub').textContent = `你处理了 ${deck.length} 个负面思维`;
+  endScreen.classList.add('show');
+}
+
+function restartGame() {
+  endScreen.classList.remove('show');
+  gameEl.innerHTML = '';
+  startScreen.style.display = '';
+  startScreen.style.opacity = '';
+  startGame();
+}
+</script>
+
+</body>
+</html>

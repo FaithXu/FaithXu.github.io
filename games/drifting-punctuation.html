@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>漂流的标点</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #f0ebe0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: 'Noto Serif SC', serif;
+    color: #2a2520;
+    overflow-x: hidden;
+  }
+
+  header {
+    padding: 40px 20px 10px;
+    text-align: center;
+  }
+
+  header h1 {
+    font-size: 20px;
+    font-weight: 300;
+    letter-spacing: 8px;
+    color: #4a4035;
+    margin-bottom: 8px;
+  }
+
+  header p {
+    font-size: 11px;
+    color: #9a8f82;
+    letter-spacing: 2px;
+    font-weight: 300;
+    max-width: 480px;
+    line-height: 1.8;
+  }
+
+  #sentence-area {
+    flex: 1;
+    width: 100%;
+    max-width: 680px;
+    padding: 30px 30px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  #sentence-track {
+    position: relative;
+    font-size: 22px;
+    font-weight: 300;
+    line-height: 2.2;
+    letter-spacing: 3px;
+    min-height: 80px;
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  #sentence-track > span {
+    display: inline-block;
+  }
+
+  .char {
+    display: inline-block;
+    transition: background 0.3s ease, color 0.3s ease;
+    border-radius: 2px;
+    padding: 0 1px;
+    position: relative;
+  }
+
+  .char.highlight-1 { background: rgba(160,120,80,0.45); color: #5a3a20; }
+  .char.highlight-2 { background: rgba(160,120,80,0.30); color: #6a4a30; }
+  .char.highlight-3 { background: rgba(160,120,80,0.18); color: #7a5a40; }
+  .char.highlight-4 { background: rgba(160,120,80,0.10); color: #8a6a50; }
+
+  .punct-char {
+    display: inline-block;
+    color: #c0392b;
+    font-size: 26px;
+    margin: 0 2px;
+    animation: punctAppear 0.4s ease;
+  }
+  .punct-char.dbl {
+    font-size: 20px;
+    letter-spacing: 2px;
+    margin: 0 4px;
+  }
+
+  @keyframes punctAppear {
+    from { opacity: 0; transform: scale(1.5); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  #suggest-dot {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(180, 140, 80, 0.4);
+    pointer-events: none;
+    display: none;
+    transform: translate(-50%, -50%);
+    top: 50%;
+  }
+
+  #floating-punct {
+    position: absolute;
+    font-size: 26px;
+    font-weight: 400;
+    pointer-events: none;
+    z-index: 10;
+    color: #c0392b;
+    transform: translate(-50%, -50%);
+    top: 50%;
+    display: none;
+  }
+
+  #history {
+    padding: 0 30px;
+    max-width: 680px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  #history-label {
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: #b0a495;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    display: none;
+  }
+
+  .history-item {
+    font-size: 15px;
+    font-weight: 300;
+    letter-spacing: 2px;
+    color: #8a7f72;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(150,130,110,0.1);
+    opacity: 0;
+    transform: translateY(4px);
+    animation: fadeUp 0.6s ease forwards;
+    line-height: 2;
+  }
+
+  .history-item .punct-mark {
+    color: #c0392b;
+    font-size: 18px;
+    margin-right: 1px;
+  }
+  .history-item .punct-mark.dbl {
+    font-size: 14px;
+    letter-spacing: 1px;
+  }
+
+  @keyframes fadeUp {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  #controls {
+    padding: 20px 30px 40px;
+    max-width: 680px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  #sentence-picker {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .sentence-btn {
+    background: none;
+    border: 1px solid rgba(150,130,110,0.25);
+    color: #8a7f72;
+    font-family: 'Noto Serif SC', serif;
+    font-size: 12px;
+    font-weight: 300;
+    padding: 6px 12px;
+    border-radius: 3px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: all 0.2s;
+  }
+  .sentence-btn:hover { border-color: rgba(150,130,110,0.5); color: #5a4a3a; }
+  .sentence-btn.active { border-color: #8a6a4a; color: #6a4a30; background: rgba(180,140,80,0.08); }
+
+  #custom-area {
+    display: flex;
+    gap: 8px;
+  }
+  #custom-input {
+    flex: 1;
+    background: rgba(255,255,255,0.5);
+    border: 1px solid rgba(150,130,110,0.25);
+    border-radius: 3px;
+    padding: 8px 12px;
+    font-family: 'Noto Serif SC', serif;
+    font-size: 14px;
+    font-weight: 300;
+    color: #4a3a2a;
+    letter-spacing: 2px;
+    outline: none;
+  }
+  #custom-input::placeholder { color: #b0a495; letter-spacing: 2px; }
+  #custom-input:focus { border-color: rgba(150,130,110,0.5); }
+  #use-custom {
+    background: none;
+    border: 1px solid rgba(150,130,110,0.3);
+    color: #7a6a5a;
+    font-family: 'Noto Serif SC', serif;
+    font-size: 12px;
+    padding: 8px 14px;
+    border-radius: 3px;
+    cursor: pointer;
+    letter-spacing: 2px;
+  }
+  #use-custom:hover { background: rgba(180,140,80,0.08); }
+
+  #punct-picker {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .punct-btn {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.5);
+    border: 1px solid rgba(150,130,110,0.2);
+    font-size: 26px;
+    font-family: 'Noto Serif SC', serif;
+    color: #5a4a3a;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .punct-btn:hover {
+    background: rgba(255,255,255,0.8);
+    border-color: rgba(150,130,110,0.4);
+    transform: scale(1.08);
+  }
+  .punct-btn.selected {
+    background: #e8ddd0;
+    border-color: #8a6a4a;
+    color: #c0392b;
+    box-shadow: 0 2px 8px rgba(150,100,60,0.15);
+    transform: scale(1.1);
+  }
+
+  .punct-btn.wide {
+    width: 64px;
+    font-size: 20px;
+    letter-spacing: -1px;
+  }
+
+  #instruction {
+    text-align: center;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: #b0a495;
+    min-height: 20px;
+    transition: opacity 0.3s;
+  }
+
+  .divider {
+    width: 40px;
+    height: 1px;
+    background: rgba(150,130,110,0.2);
+    margin: 0 auto;
+  }
+
+  #reset-btn {
+    background: none;
+    border: none;
+    color: #b0a495;
+    font-family: 'Noto Serif SC', serif;
+    font-size: 11px;
+    letter-spacing: 3px;
+    cursor: pointer;
+    padding: 10px;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+  #reset-btn:hover { color: #7a6a5a; }
+
+  /* Mobile */
+  @media (max-width: 600px) {
+    header h1 { font-size: 16px; letter-spacing: 5px; }
+    #sentence-track { font-size: 18px; }
+    .punct-btn { width: 44px; height: 44px; font-size: 22px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>漂流的标点</h1>
+  <p>标点会自己选择停留的位置。你不能控制它，你只能看着它漂流。<br>每一次漂流，句子的意义都会改变。</p>
+</header>
+
+<div id="sentence-area">
+  <div id="sentence-track">
+    <span id="sentence-text"></span>
+    <span id="suggest-dot"></span>
+    <span id="floating-punct"></span>
+  </div>
+</div>
+
+<div id="history">
+  <div id="history-label">漂流记录</div>
+</div>
+
+<div id="controls">
+  <div class="divider"></div>
+  <div id="sentence-picker"></div>
+  <div id="custom-area">
+    <input id="custom-input" placeholder="输入你自己的句子…" maxlength="40" />
+    <button id="use-custom">使用</button>
+  </div>
+  <div class="divider"></div>
+  <div id="punct-picker">
+    <button class="punct-btn" data-punct="，" title="逗号">，</button>
+    <button class="punct-btn" data-punct="、" title="顿号">、</button>
+    <button class="punct-btn" data-punct="；" title="分号">；</button>
+    <button class="punct-btn" data-punct="。" title="句号">。</button>
+    <button class="punct-btn" data-punct="？" title="问号">？</button>
+    <button class="punct-btn" data-punct="！" title="感叹号">！</button>
+    <button class="punct-btn" data-punct="…" title="省略号">…</button>
+    <button class="punct-btn wide" data-punct="——" title="破折号">——</button>
+    <button class="punct-btn" data-punct="「」" title="引号">「」</button>
+  </div>
+  <div id="instruction">选择一个标点，再点击句子中的位置</div>
+</div>
+
+<div style="text-align:center; padding-bottom:40px;">
+  <button id="reset-btn">清空句子，重新开始</button>
+</div>
+
+<script>
+// ─── Sentence Library ───
+const SENTENCES = [
+  { text: "今天天气真好可是我不想出门", questionWords: ["怎么"], softWords: ["可是","但是","不过"] },
+  { text: "我知道你走了但我还在等", questionWords: ["怎么","为什么"], softWords: ["但","可是"] },
+  { text: "你做得对但我很难过", questionWords: ["怎么"], softWords: ["但","可是","不过"] },
+  { text: "我爱你对不起", questionWords: ["怎么"], softWords: ["可是","但"] },
+  { text: "明天会好的大概吧", questionWords: ["怎么","是不是"], softWords: ["大概","可能"] },
+  { text: "她走了他说还会回来", questionWords: [], softWords: ["他说","她说"] },
+  { text: "我以为你喜欢我原来不是", questionWords: ["怎么"], softWords: ["原来","其实"] },
+  { text: "我们可以在这里停下", questionWords: ["怎么"], softWords: ["可以","也许"] },
+  { text: "他很安静她也是", questionWords: [], softWords: ["也是","并且"] },
+  { text: "我听到了门响但没有动", questionWords: [], softWords: ["但","可是","不过"] },
+  { text: "你走吧我没事", questionWords: [], softWords: ["我","其实"] },
+  { text: "天黑了路灯亮了", questionWords: [], softWords: [] },
+  { text: "她看着我笑了笑", questionWords: [], softWords: [] },
+  { text: "算了不管了", questionWords: [], softWords: ["算了"] },
+  { text: "你想太多了", questionWords: ["怎么"], softWords: ["太"] },
+  { text: "别难过这不是你的错", questionWords: [], softWords: ["不是","其实"] },
+  { text: "时间过得真快", questionWords: [], softWords: ["真","真快"] },
+  { text: "我好像在哪里见过你", questionWords: ["哪里","怎么"], softWords: ["好像","似乎"] },
+  { text: "没事的我习惯了", questionWords: [], softWords: ["其实","习惯了"] },
+  { text: "你记得我吗", questionWords: ["怎么"], softWords: [] },
+  { text: "春天来了花开了", questionWords: [], softWords: [] },
+  { text: "我不想说话了", questionWords: [], softWords: ["其实"] },
+  { text: "雨停了风还在吹", questionWords: [], softWords: ["但","可是"] },
+  { text: "这本书很好那个人也是", questionWords: [], softWords: ["也是"] },
+  { text: "你说得对我信了", questionWords: [], softWords: ["其实"] },
+  { text: "他没有来我也没有等", questionWords: [], softWords: ["也","还"] },
+  { text: "我想好了决定不去", questionWords: [], softWords: ["其实"] },
+  { text: "窗外有只猫在叫", questionWords: [], softWords: [] },
+  { text: "我累了但睡不着", questionWords: [], softWords: ["但","可是"] },
+  { text: "等一下让我想想", questionWords: [], softWords: [] },
+];
+
+// ─── Grammar weights ───
+const PUNCT_WEIGHTS = {
+  "，": (pos, len, meta) => {
+    const ratio = pos / len;
+    let w = 0.3;
+    if (ratio > 0.2 && ratio < 0.8) w += 0.4;
+    const nearSoft = meta.softWords.some(sw => {
+      const idx = meta.text.indexOf(sw);
+      return idx >= 0 && Math.abs(pos - idx - sw.length / 2) < 3;
+    });
+    if (nearSoft) w += 0.5;
+    return w;
+  },
+  "、": (pos, len) => {
+    // 顿号：喜欢列表中间，偏前
+    const ratio = pos / len;
+    if (ratio > 0.15 && ratio < 0.6) return 1.2;
+    if (ratio <= 0.15) return 0.8;
+    return 0.3;
+  },
+  "；": (pos, len) => {
+    // 分号：并列分句之间，偏中后
+    const ratio = pos / len;
+    if (ratio > 0.4 && ratio < 0.75) return 1.8;
+    if (ratio > 0.3) return 0.6;
+    return 0.1;
+  },
+  "。": (pos, len) => {
+    const ratio = pos / len;
+    if (ratio > 0.75) return 2.5;
+    if (ratio > 0.5) return 0.4;
+    return 0.05;
+  },
+  "？": (pos, len, meta) => {
+    const ratio = pos / len;
+    let w = 0.5;
+    if (ratio > 0.65) w += 1.5;
+    const nearQ = meta.questionWords.some(qw => {
+      const idx = meta.text.indexOf(qw);
+      return idx >= 0 && pos > idx && pos < idx + qw.length + 3;
+    });
+    if (nearQ) w += 0.8;
+    return w;
+  },
+  "！": (pos, len) => {
+    const ratio = pos / len;
+    if (ratio > 0.7) return 2.0;
+    if (ratio > 0.4) return 0.6;
+    return 0.2;
+  },
+  "…": (pos, len) => {
+    const ratio = pos / len;
+    if (ratio > 0.8) return 2.8;
+    if (ratio > 0.6) return 0.5;
+    return 0.1;
+  },
+  "——": (pos, len) => {
+    // 破折号：急转、断裂感，喜欢中间偏后
+    const ratio = pos / len;
+    if (ratio > 0.45 && ratio < 0.8) return 2.2;
+    if (ratio > 0.3) return 0.8;
+    return 0.2;
+  },
+  "「」": (pos, len) => {
+    // 引号：框住词语或引用，偏前或偏后
+    const ratio = pos / len;
+    if (ratio < 0.3) return 1.5;
+    if (ratio > 0.7) return 1.2;
+    return 0.3;
+  },
+};
+
+// ─── State ───
+let currentSentence = null;
+let placedPuncts = [];
+let selectedPunct = null;
+let isAnimating = false;
+
+// ─── UI ───
+const sentenceText = document.getElementById('sentence-text');
+const sentenceTrack = document.getElementById('sentence-track');
+const suggestDot = document.getElementById('suggest-dot');
+const floatingPunct = document.getElementById('floating-punct');
+const historyDiv = document.getElementById('history');
+const historyLabel = document.getElementById('history-label');
+const instruction = document.getElementById('instruction');
+const punctBtns = document.querySelectorAll('.punct-btn');
+const sentencePicker = document.getElementById('sentence-picker');
+const customInput = document.getElementById('custom-input');
+const useCustomBtn = document.getElementById('use-custom');
+const resetBtn = document.getElementById('reset-btn');
+
+// Build sentence picker
+SENTENCES.forEach((s, i) => {
+  const btn = document.createElement('button');
+  btn.className = 'sentence-btn';
+  btn.textContent = `${i + 1}`;
+  btn.title = s.text;
+  btn.addEventListener('click', () => selectSentence(i));
+  sentencePicker.appendChild(btn);
+});
+
+function selectSentence(index) {
+  currentSentence = SENTENCES[index];
+  placedPuncts = [];
+  renderSentence();
+  historyDiv.querySelectorAll('.history-item').forEach(el => el.remove());
+  document.querySelectorAll('.sentence-btn').forEach((b, i) => {
+    b.classList.toggle('active', i === index);
+  });
+}
+
+selectSentence(0);
+
+function renderSentence() {
+  if (!currentSentence) return;
+  const chars = currentSentence.text.split("");
+
+  const segments = [];
+  let lastIdx = 0;
+  const sorted = [...placedPuncts].sort((a, b) => a.charIdx - b.charIdx);
+  for (const p of sorted) {
+    if (p.charIdx > lastIdx) segments.push({ type: 'text', chars: chars.slice(lastIdx, p.charIdx) });
+    segments.push({ type: 'punct', punct: p.punct });
+    lastIdx = p.charIdx;
+  }
+  if (lastIdx < chars.length) segments.push({ type: 'text', chars: chars.slice(lastIdx) });
+
+  sentenceText.innerHTML = '';
+  let charCount = 0;
+  for (const seg of segments) {
+    if (seg.type === 'punct') {
+      const span = document.createElement('span');
+      span.className = 'punct-char' + (seg.punct.length > 1 ? ' dbl' : '');
+      span.textContent = seg.punct;
+      sentenceText.appendChild(span);
+    } else {
+      for (const ch of seg.chars) {
+        const span = document.createElement('span');
+        span.className = 'char';
+        span.textContent = ch;
+        span.dataset.idx = charCount;
+        charCount++;
+        sentenceText.appendChild(span);
+      }
+    }
+  }
+}
+
+function renderHistory() {
+  if (!currentSentence || placedPuncts.length === 0) {
+    historyLabel.style.display = 'none';
+    return;
+  }
+  historyLabel.style.display = 'block';
+
+  const chars = currentSentence.text.split("");
+  let html = "";
+  const sorted = [...placedPuncts].sort((a, b) => a.charIdx - b.charIdx);
+  let charCount = 0;
+  for (const p of sorted) {
+    while (charCount < p.charIdx && charCount < chars.length) {
+      html += chars[charCount];
+      charCount++;
+    }
+    html += `<span class="punct-mark${p.punct.length > 1 ? ' dbl' : ''}">${p.punct}</span>`;
+  }
+  while (charCount < chars.length) {
+    html += chars[charCount];
+    charCount++;
+  }
+
+  const item = document.createElement('div');
+  item.className = 'history-item';
+  item.innerHTML = html;
+  historyDiv.appendChild(item);
+}
+
+// ─── Punctuation selection ───
+punctBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (isAnimating) return;
+    const p = btn.dataset.punct;
+    if (selectedPunct === p) {
+      selectedPunct = null;
+      btn.classList.remove('selected');
+      instruction.textContent = '选择一个标点，再点击句子中的位置';
+    } else {
+      selectedPunct = p;
+      punctBtns.forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      instruction.textContent = `点击句子中"${p}"应该出现的位置`;
+    }
+  });
+});
+
+// ─── Click on sentence ───
+sentenceTrack.addEventListener('click', (e) => {
+  if (!selectedPunct || isAnimating || !currentSentence) return;
+  if (e.target.classList.contains('punct-char')) return;
+
+  const chars = sentenceText.querySelectorAll('.char[data-idx]');
+  if (!chars.length) return;
+
+  let minDist = Infinity;
+  let targetCharIdx = 0;
+
+  chars.forEach(ch => {
+    const rect = ch.getBoundingClientRect();
+    const d = Math.abs(e.clientX - (rect.left + rect.width / 2));
+    if (d < minDist) {
+      minDist = d;
+      targetCharIdx = parseInt(ch.dataset.idx);
+    }
+  });
+
+  if (minDist > 80) return;
+
+  const firstRect = chars[0].getBoundingClientRect();
+  const charW = firstRect.width || 18;
+  suggestDot.style.display = 'block';
+  suggestDot.style.left = (targetCharIdx * charW + charW / 2) + 'px';
+
+  driftPunct(targetCharIdx, selectedPunct);
+});
+
+// ─── Drift Algorithm ───
+function computeTargetPosition(clickPos, punct, meta) {
+  const len = meta.text.length;
+  let totalWeight = 0;
+  const weights = [];
+  for (let i = 0; i < len; i++) {
+    const w = PUNCT_WEIGHTS[punct](i, len, meta);
+    weights.push(w);
+    totalWeight += w;
+  }
+  let r = Math.random() * totalWeight;
+  let target = clickPos;
+  for (let i = 0; i < len; i++) {
+    r -= weights[i];
+    if (r <= 0) { target = i; break; }
+  }
+  return target;
+}
+
+function driftPunct(clickPos, punct) {
+  if (!currentSentence) return;
+  isAnimating = true;
+  instruction.textContent = '标点正在漂流……';
+
+  const meta = { text: currentSentence.text, questionWords: currentSentence.questionWords, softWords: currentSentence.softWords };
+  const len = currentSentence.text.length;
+
+  // 引号特殊处理：前引号向左漂，后引号向右漂
+  if (punct === '「」') {
+    driftQuotePair(clickPos, meta, len);
+    return;
+  }
+
+  const finalPos = computeTargetPosition(clickPos, punct, meta);
+  const dir = finalPos >= clickPos ? 1 : -1;
+  const steps = Math.abs(finalPos - clickPos);
+
+  const path = [clickPos];
+  for (let i = 1; i <= Math.max(steps, 1); i++) {
+    let pos = clickPos + dir * i;
+    if (Math.random() < 0.15) {
+      pos = Math.max(0, Math.min(len - 1, pos + (Math.random() < 0.5 ? 1 : -1)));
+    }
+    pos = Math.max(0, Math.min(len - 1, pos));
+    if (pos !== path[path.length - 1]) path.push(pos);
+  }
+  if (path[path.length - 1] !== finalPos) path.push(finalPos);
+
+  const chars = sentenceText.querySelectorAll('.char[data-idx]');
+  if (!chars.length) { isAnimating = false; return; }
+
+  const firstRect = chars[0].getBoundingClientRect();
+  const charW = firstRect.width || 18;
+
+  floatingPunct.textContent = punct;
+  floatingPunct.style.display = 'block';
+  floatingPunct.style.fontSize = punct.length > 1 ? '20px' : '26px';
+  floatingPunct.style.left = (clickPos * charW + charW / 2) + 'px';
+
+  const highlights = [];
+  let step = 0;
+  const STEPS_PER_POS = 3;
+  const TOTAL_STEPS = path.length * STEPS_PER_POS;
+
+  function animateStep() {
+    const posIdx = Math.min(Math.floor(step / STEPS_PER_POS), path.length - 1);
+    const pos = path[posIdx];
+
+    floatingPunct.style.left = (pos * charW + charW / 2) + 'px';
+
+    if (chars[pos] && !highlights.includes(pos)) {
+      highlights.push(pos);
+      const cls = step < TOTAL_STEPS * 0.25 ? 'highlight-1'
+                : step < TOTAL_STEPS * 0.5 ? 'highlight-2'
+                : step < TOTAL_STEPS * 0.75 ? 'highlight-3'
+                : 'highlight-4';
+      chars[pos].classList.add(cls);
+    }
+
+    step++;
+
+    if (step < TOTAL_STEPS) {
+      setTimeout(animateStep, 45 + Math.random() * 20);
+    } else {
+      floatingPunct.style.display = 'none';
+      suggestDot.style.display = 'none';
+
+      setTimeout(() => {
+        highlights.forEach(pos => {
+          if (chars[pos]) chars[pos].classList.remove('highlight-1','highlight-2','highlight-3','highlight-4');
+        });
+      }, 4000);
+
+      placedPuncts.push({ charIdx: finalPos, punct });
+      renderSentence();
+      renderHistory();
+
+      selectedPunct = null;
+      punctBtns.forEach(b => b.classList.remove('selected'));
+      isAnimating = false;
+      instruction.textContent = '选择一个标点，再点击句子中的位置';
+    }
+  }
+
+  setTimeout(animateStep, 200);
+}
+
+// ─── 引号双漂流 ───
+function driftQuotePair(clickPos, meta, len) {
+  const chars = sentenceText.querySelectorAll('.char[data-idx]');
+  if (!chars.length) { isAnimating = false; return; }
+
+  const firstRect = chars[0].getBoundingClientRect();
+  const charW = firstRect.width || 18;
+
+  // 前引号「：向左漂（最终偏前）
+  const frontPos = Math.floor(clickPos * 0.4);
+  // 后引号」：向右漂（最终偏后）
+  const backPos = clickPos + Math.floor((len - clickPos) * 0.6);
+
+  // 构建两条路径
+  function buildPath(from, to) {
+    const dir = to >= from ? 1 : -1;
+    const steps = Math.abs(to - from);
+    const path = [from];
+    for (let i = 1; i <= Math.max(steps, 1); i++) {
+      let p = from + dir * i;
+      if (Math.random() < 0.12) p = Math.max(0, Math.min(len - 1, p + (Math.random() < 0.5 ? 1 : -1)));
+      p = Math.max(0, Math.min(len - 1, p));
+      if (p !== path[path.length - 1]) path.push(p);
+    }
+    if (path[path.length - 1] !== to) path.push(to);
+    return path;
+  }
+
+  const pathFront = buildPath(clickPos, frontPos);
+  const pathBack = buildPath(clickPos, backPos);
+
+  // 创建两个浮动元素
+  const f1 = document.createElement('div');
+  const f2 = document.createElement('div');
+  for (const f of [f1, f2]) {
+    f.style.cssText = `position:absolute;font-size:22px;font-weight:400;pointer-events:none;z-index:10;color:#c0392b;transform:translate(-50%,-50%);top:50%;display:block;`;
+    sentenceText.appendChild(f);
+  }
+  f1.textContent = '「';
+  f2.textContent = '」';
+  f1.style.left = (clickPos * charW + charW / 2) + 'px';
+  f2.style.left = (clickPos * charW + charW / 2) + 'px';
+
+  const highlights = new Set();
+  let step = 0;
+  const STEPS_PER_POS = 3;
+  const TOTAL_STEPS = Math.max(pathFront.length, pathBack.length) * STEPS_PER_POS;
+
+  function animateStep() {
+    const posIdx = Math.floor(step / STEPS_PER_POS);
+    const f1Pos = pathFront[Math.min(posIdx, pathFront.length - 1)];
+    const f2Pos = pathBack[Math.min(posIdx, pathBack.length - 1)];
+
+    f1.style.left = (f1Pos * charW + charW / 2) + 'px';
+    f2.style.left = (f2Pos * charW + charW / 2) + 'px';
+
+    for (const pos of [f1Pos, f2Pos]) {
+      if (chars[pos] && !highlights.has(pos)) {
+        highlights.add(pos);
+        const p = highlights.size;
+        const cls = p <= 3 ? 'highlight-1' : p <= 7 ? 'highlight-2' : p <= 11 ? 'highlight-3' : 'highlight-4';
+        chars[pos].classList.add(cls);
+      }
+    }
+
+    step++;
+    if (step < TOTAL_STEPS) {
+      setTimeout(animateStep, 50 + Math.random() * 15);
+    } else {
+      f1.remove();
+      f2.remove();
+      suggestDot.style.display = 'none';
+
+      setTimeout(() => {
+        highlights.forEach(pos => {
+          if (chars[pos]) chars[pos].classList.remove('highlight-1','highlight-2','highlight-3','highlight-4');
+        });
+      }, 4000);
+
+      // 前引号位置在前，后引号位置在后
+      placedPuncts.push({ charIdx: frontPos, punct: '「' });
+      placedPuncts.push({ charIdx: backPos, punct: '」' });
+      renderSentence();
+      renderHistory();
+
+      selectedPunct = null;
+      punctBtns.forEach(b => b.classList.remove('selected'));
+      isAnimating = false;
+      instruction.textContent = '选择一个标点，再点击句子中的位置';
+    }
+  }
+
+  setTimeout(animateStep, 200);
+}
+
+// ─── Custom sentence ───
+useCustomBtn.addEventListener('click', () => {
+  const text = customInput.value.trim().replace(/[，。？！…、]/g, '');
+  if (text.length < 4 || text.length > 40) {
+    instruction.textContent = '句子长度需在 4-40 个字之间';
+    return;
+  }
+  currentSentence = { text, questionWords: [], softWords: [] };
+  placedPuncts = [];
+  renderSentence();
+  historyDiv.querySelectorAll('.history-item').forEach(el => el.remove());
+  document.querySelectorAll('.sentence-btn').forEach(b => b.classList.remove('active'));
+  instruction.textContent = '选择一个标点，再点击句子中的位置';
+  customInput.value = '';
+});
+
+// ─── Reset ───
+resetBtn.addEventListener('click', () => {
+  if (currentSentence) {
+    placedPuncts = [];
+    renderSentence();
+    historyDiv.querySelectorAll('.history-item').forEach(el => el.remove());
+  }
+});
+</script>
+</body>
+</html>

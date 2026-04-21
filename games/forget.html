@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>遗忘</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #0d0f12;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: "Noto Serif SC", "SimSun", serif;
+      color: #c8d4e0;
+      padding: 20px;
+    }
+
+    .title {
+      font-size: 13px;
+      letter-spacing: 0.6em;
+      color: rgba(200, 212, 224, 0.3);
+      margin-bottom: 8px;
+      text-indent: 0.6em;
+    }
+
+    .subtitle {
+      font-size: 11px;
+      letter-spacing: 0.3em;
+      color: rgba(200, 212, 224, 0.15);
+      margin-bottom: 40px;
+      text-indent: 0.3em;
+    }
+
+    .dialogue-container {
+      width: 100%;
+      max-width: 480px;
+      min-height: 320px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      margin-bottom: 30px;
+    }
+
+    .speaker {
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      color: rgba(200, 212, 224, 0.35);
+      margin-bottom: 4px;
+      text-indent: 0.2em;
+    }
+
+    .message {
+      font-size: 15px;
+      line-height: 1.8;
+      color: rgba(200, 212, 224, 0.8);
+      padding: 12px 20px;
+      border-left: 2px solid rgba(200, 212, 224, 0.15);
+      margin-bottom: 20px;
+      transition: opacity 0.4s ease;
+      min-height: 48px;
+    }
+
+    .message.forgetting {
+      opacity: 0;
+      transform: translateX(-8px);
+    }
+
+    .message-b {
+      border-left-color: rgba(160, 180, 200, 0.25);
+      color: rgba(180, 200, 220, 0.6);
+    }
+
+    .message.ghost {
+      opacity: 0.25;
+      color: rgba(200, 212, 224, 0.3);
+      font-size: 13px;
+      font-style: italic;
+    }
+
+    .empty-space {
+      min-height: 52px;
+      margin-bottom: 20px;
+    }
+
+    .input-area {
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      gap: 10px;
+    }
+
+    #message-input {
+      flex: 1;
+      background: rgba(200, 212, 224, 0.05);
+      border: 1px solid rgba(200, 212, 224, 0.12);
+      color: #c8d4e0;
+      font-size: 15px;
+      padding: 12px 18px;
+      outline: none;
+      font-family: inherit;
+      transition: border-color 0.3s ease;
+      border-radius: 2px;
+    }
+
+    #message-input:focus {
+      border-color: rgba(200, 212, 224, 0.3);
+    }
+
+    #message-input::placeholder {
+      color: rgba(200, 212, 224, 0.2);
+    }
+
+    #submit-btn {
+      background: rgba(200, 212, 224, 0.08);
+      border: 1px solid rgba(200, 212, 224, 0.15);
+      color: rgba(200, 212, 224, 0.5);
+      font-size: 13px;
+      letter-spacing: 0.2em;
+      padding: 12px 24px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.3s ease;
+      border-radius: 2px;
+    }
+
+    #submit-btn:hover {
+      background: rgba(200, 212, 224, 0.12);
+      color: rgba(200, 212, 224, 0.8);
+    }
+
+    .counter {
+      margin-top: 30px;
+      font-size: 11px;
+      letter-spacing: 0.3em;
+      color: rgba(200, 212, 224, 0.2);
+    }
+
+    .counter-num {
+      color: rgba(200, 212, 224, 0.4);
+      font-size: 20px;
+      display: block;
+      margin-top: 6px;
+      letter-spacing: 0.1em;
+      font-family: monospace;
+    }
+
+    .hint {
+      margin-top: 15px;
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      color: rgba(200, 212, 224, 0.1);
+      text-indent: 0.2em;
+    }
+
+    .divider {
+      width: 100%;
+      max-width: 480px;
+      height: 1px;
+      background: rgba(200, 212, 224, 0.06);
+      margin: 20px 0;
+    }
+
+    @keyframes pop-in {
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .message.new {
+      animation: pop-in 0.3s ease forwards;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="title">遗 忘</div>
+  <div class="subtitle">每说一句话，就会忘记之前说的最后一句</div>
+
+  <div class="dialogue-container" id="dialogue">
+    <div class="speaker">对方说：</div>
+    <div class="message message-b" id="msg-a">……</div>
+
+    <div class="empty-space" id="empty-space"></div>
+
+    <div class="speaker">你说：</div>
+    <div class="message" id="msg-b">……</div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="input-area">
+    <input type="text" id="message-input" placeholder="输入你说的话，按回车发送" maxlength="100" />
+    <button id="submit-btn">发送</button>
+  </div>
+
+  <div class="counter">
+    被遗忘的消息
+    <span class="counter-num" id="counter">0</span>
+  </div>
+
+  <div class="hint">你只能记住最近说的那句话</div>
+
+  <script>
+    const speakerA = document.getElementById('msg-a');
+    const speakerB = document.getElementById('msg-b');
+    const emptySpace = document.getElementById('empty-space');
+    const input = document.getElementById('message-input');
+    const submitBtn = document.getElementById('submit-btn');
+    const counter = document.getElementById('counter');
+
+    let historyA = []; // 对方的消息历史
+    let historyB = []; // 你的消息历史
+    let forgotten = 0;
+
+    // Audio context for pop sound
+    let audioCtx = null;
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+
+    function playPop() {
+      if (!audioCtx) return;
+
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.15);
+
+      gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+
+      osc.start(audioCtx.currentTime);
+      osc.stop(audioCtx.currentTime + 0.2);
+    }
+
+    function sendMessage() {
+      const text = input.value.trim();
+      if (!text) return;
+
+      initAudio();
+
+      // 你的新消息 → 覆盖对方的旧消息
+      // 先播放pop（表示有东西被遗忘）
+      playPop();
+
+      // 对方说的话向前滚动：你刚才说的 → 现在是对方的"记忆"
+      if (historyB.length > 0) {
+        const oldYou = historyB[historyB.length - 1];
+
+        // 添加幽灵标记
+        speakerA.classList.add('ghost');
+        speakerA.textContent = `…… "${oldYou}"`;
+        emptySpace.style.display = 'none';
+      }
+
+      // 移除旧消息（被遗忘）
+      if (historyB.length > 0) {
+        historyB.pop();
+        forgotten++;
+        counter.textContent = forgotten;
+      }
+
+      // 添加你的新消息
+      historyB.push(text);
+      speakerB.textContent = text;
+      speakerB.classList.remove('new');
+      void speakerB.offsetWidth; // trigger reflow
+      speakerB.classList.add('new');
+
+      // 对方回复（随机生成一句，继续对话）
+      const replies = [
+        '然后呢？',
+        '嗯，我明白。',
+        '有意思。',
+        '为什么这么说？',
+        '真的吗？',
+        '我想听你继续说。',
+        '……所以？',
+        '这让我想到一些事。',
+        '你还记得你刚才说了什么吗？',
+        '好吧。',
+        '等等，你刚才说的是什么来着？',
+        '原来如此。',
+        '继续。',
+        '我有点跟不上你了。',
+      ];
+      const reply = replies[Math.floor(Math.random() * replies.length)];
+
+      setTimeout(() => {
+        speakerA.classList.remove('ghost');
+        speakerA.textContent = reply;
+        speakerA.classList.remove('new');
+        void speakerA.offsetWidth;
+        speakerA.classList.add('new');
+        historyA.push(reply);
+      }, 400);
+
+      input.value = '';
+      input.focus();
+    }
+
+    // Events
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        sendMessage();
+      }
+    });
+
+    submitBtn.addEventListener('click', sendMessage);
+
+    // Initial focus
+    input.focus();
+  </script>
+
+</body>
+</html>
