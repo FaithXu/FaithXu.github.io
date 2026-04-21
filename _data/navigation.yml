@@ -1,9 +1,13 @@
 main:
-  - title: "Posts"
-    url: /posts/
-  - title: "Categories"
-    url: /categories/
-  - title: "Tags"
-    url: /tags/
-  - title: "About"
+#  - title: "Posts"
+#    url: /posts/
+#  - title: "Categories"
+#    url: /categories/
+#  - title: "Tags"
+#    url: /tags/
+  - title: "求职作品"
+    url: /portfolio/aigw-guide/
+  - title: "个人项目"
+    url: /games/
+  - title: "关于我"
     url: /about/
