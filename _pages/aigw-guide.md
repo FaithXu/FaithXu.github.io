@@ -1,14 +1,22 @@
 ---
 layout: single
-title: "AI网关（AI Gateway）创建与配额配置指南"
+title: "**求职作品展示 | 针对某平台 AI 网关产品**"
 permalink: /portfolio/aigw-guide/
 toc: true
 toc_label: "目录"
 toc_icon: "list-alt"
 ---
 
-# 创建 AI 网关
+文档设计研究：以 Zenlayer AI 网关为例
 
+本作品展示了我在技术文档信息架构方面的设计实践。我以官方文档为基础，通过设计 Prompt 链辅助重构了“创建 AI 网关”这一核心流程，重点探索了“场景决策驱动”的文档结构，以及如何让文档在 AI 搜索时代更具价值。
+
+非官方作品，仅用于展示个人能力。
+
+原文：[创建 AI 网关 | 中文 | Zenlayer Docs](https://docs.console.zenlayer.com/welcome/cn/ai-gateway/create-an-ai-gateway)
+
+
+# 创建 AI 网关
 
 **预期阅读与操作用时**：5 分钟
 
@@ -90,7 +98,7 @@ Token 是模型处理文本的基本单位。Token 配额定义了该 API 密钥
 
 你可以将 AI 网关实例加入到指定的资源组中。在资源组内，可以为特定成员授予资源的相应权限。
 
-> 📖 更多信息请参见[创建资源组 | 中文 | Zenlayer Docs](https://docs.console.zenlayer.com/welcome/cn/platform/team-management/create-a-resource-group)。
+> 📖 更多信息请参见[创建资源组 | 中文 | Zenlayer Docs] (https://docs.console.zenlayer.com/welcome/cn/platform/team-management/create-a-resource-group)。
 
 ---
 
@@ -239,5 +247,5 @@ Token 配额是**硬限制**。一旦用量达到你设置的上限，该 API �
 
 ---
 
-**文档版本**：1.0
-**最后更新**：2026年4月21日
+**文档版本**：1.1
+**最后更新**：2026年4月22日
