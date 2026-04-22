@@ -9,5 +9,5 @@ main:
     url: /portfolio/aigw-guide/
   - title: "个人项目"
     url: /games/
-  - title: "关于我"
-    url: /about/
+#  - title: "关于我"
+#    url: /about/
